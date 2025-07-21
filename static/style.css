@@ -1,0 +1,307 @@
+/* Additional custom styles for the Flask Chat App */
+.chat-bubble {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-item:hover {
+    background-color: var(--whatsapp-bg);
+    transition: background-color 0.2s ease;
+}
+
+.message-bubble {
+    border-radius: 12px;
+    position: relative;
+}
+
+.message-sent::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid var(--whatsapp-light-green);
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+}
+
+.message-received::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-right: 8px solid white;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--whatsapp-green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--whatsapp-green);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        position: absolute;
+        z-index: 10;
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar.hidden {
+        transform: translateX(-100%);
+    }
+    
+    .chat-container {
+        position: relative;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .message-received {
+        background-color: #2a2a2a;
+        color: #ffffff;
+    }
+    
+    .message-received::after {
+        border-right-color: #2a2a2a;
+    }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Status indicators */
+.status-online {
+    color: var(--whatsapp-green);
+}
+
+.status-offline {
+    color: #9ca3af;
+}
+
+.status-away {
+    color: #f59e0b;
+}
+
+/* Message status icons */
+.message-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: var(--whatsapp-secondary);
+}
+
+/* Hover effects */
+.hover-effect:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+/* Focus styles */
+input:focus,
+textarea:focus {
+    outline: none;
+    ring: 2px solid var(--whatsapp-green);
+    border-color: var(--whatsapp-green);
+}
+
+/* Button styles */
+.btn-primary {
+    background-color: var(--whatsapp-green);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--whatsapp-dark-green);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--whatsapp-secondary);
+    border: 1px solid var(--whatsapp-border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--whatsapp-bg);
+    color: var(--whatsapp-text);
+}
+
+/* Avatar styles */
+.avatar {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-small {
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-medium {
+    width: 48px;
+    height: 48px;
+}
+
+.avatar-large {
+    width: 64px;
+    height: 64px;
+}
+
+/* Utility classes */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.shadow-subtle {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-medium {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.border-radius-medium {
+    border-radius: 8px;
+}
+
+.border-radius-large {
+    border-radius: 12px;
+}
+
+/* Animation classes */
+.animate-bounce {
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-5px);
+    }
+    60% {
+        transform: translateY(-3px);
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar, .message-input-container, .chat-header button {
+        display: none;
+    }
+    
+    .messages-container {
+        height: auto;
+        overflow: visible;
+    }
+    
+    .message-bubble {
+        break-inside: avoid;
+    }
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ChatApp{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root {
+            --whatsapp-green: #25d366;
+            --whatsapp-dark-green: #128c7e;
+            --whatsapp-light-green: #dcf8c6;
+            --whatsapp-bg: #f0f2f5;
+            --whatsapp-chat-bg: #e5ddd5;
+            --whatsapp-text: #111b21;
+            --whatsapp-secondary: #667781;
+            --whatsapp-border: #e9edef;
+        }
+        
+        .bg-whatsapp-green { background-color: var(--whatsapp-green); }
+        .bg-whatsapp-dark-green { background-color: var(--whatsapp-dark-green); }
+        .bg-whatsapp-light-green { background-color: var(--whatsapp-light-green); }
+        .bg-whatsapp-bg { background-color: var(--whatsapp-bg); }
+        .bg-whatsapp-chat-bg { background-color: var(--whatsapp-chat-bg); }
+        .text-whatsapp-text { color: var(--whatsapp-text); }
+        .text-whatsapp-secondary { color: var(--whatsapp-secondary); }
+        .border-whatsapp-border { border-color: var(--whatsapp-border); }
+        
+        .hover\:bg-whatsapp-dark-green:hover { background-color: var(--whatsapp-dark-green); }
+        .focus\:ring-whatsapp-green:focus { --tw-ring-color: var(--whatsapp-green); }
+        
+        .message-bubble {
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        
+        .message-sent {
+            background-color: var(--whatsapp-light-green);
+            margin-left: auto;
+        }
+        
+        .message-received {
+            background-color: white;
+            margin-right: auto;
+        }
+        
+        .chat-container {
+            height: calc(100vh - 64px);
+        }
+        
+        .messages-container {
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+        
+        .sidebar {
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .typing-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            position: relative;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #999;
+            margin: 0 1px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .online-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #25d366;
+            border-radius: 50%;
+            border: 2px solid white;
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+        }
+    </style>
+</head>
+<body class="bg-whatsapp-bg">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message alert alert-{{ 'danger' if category == 'error' else category }} bg-{% if category == 'error' %}red{% elif category == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if category == 'error' %}red{% elif category == 'success' %}green{% else %}blue{% endif %}-400 text-{% if category == 'error' %}red{% elif category == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded">
+                    {{ message }}
+                    <button type="button" class="close float-right" onclick="this.parentElement.style.display='none';">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% block content %}{% endblock %}
+    
+    <script>
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => msg.style.display = 'none');
+        }, 5000);
+    </script>
+</body>
+</html>

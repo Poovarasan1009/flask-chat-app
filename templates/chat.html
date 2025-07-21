@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - ChatApp{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-whatsapp-bg">
+    <!-- Sidebar -->
+    <div class="w-80 bg-white border-r border-whatsapp-border sidebar">
+        <!-- User Profile Header -->
+        <div class="p-4 bg-whatsapp-bg border-b border-whatsapp-border">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <img src="{{ current_user.avatar }}" alt="{{ current_user.username }}" 
+                             class="w-10 h-10 rounded-full">
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div>
+                        <h2 class="font-semibold text-whatsapp-text">{{ current_user.username }}</h2>
+                        <p class="text-sm text-whatsapp-secondary">Online</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="p-2 text-whatsapp-secondary hover:text-red-500">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="p-4 bg-white border-b border-whatsapp-border">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-whatsapp-secondary"></i>
+                <input type="text" id="search-input" placeholder="Search conversations..." 
+                       class="w-full pl-10 pr-4 py-2 bg-whatsapp-bg border-0 rounded-lg focus:ring-2 focus:ring-whatsapp-green">
+            </div>
+        </div>
+
+        <!-- Contact List -->
+        <div class="flex-1 overflow-y-auto scrollbar-hide">
+            <div id="user-list">
+                <!-- Users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="flex-1 flex flex-col">
+        <div id="welcome-screen" class="flex-1 flex items-center justify-center bg-whatsapp-chat-bg">
+            <div class="text-center">
+                <div class="w-20 h-20 bg-whatsapp-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-comments text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-whatsapp-text mb-2">Welcome to ChatApp</h3>
+                <p class="text-whatsapp-secondary">Select a conversation to start messaging</p>
+            </div>
+        </div>
+
+        <!-- Chat Header -->
+        <div id="chat-header" class="hidden p-4 bg-whatsapp-bg border-b border-whatsapp-border">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <img id="current-chat-avatar" src="" alt="" class="w-10 h-10 rounded-full">
+                        <div id="current-chat-online" class="online-indicator hidden"></div>
+                    </div>
+                    <div>
+                        <h3 id="current-chat-name" class="font-semibold text-whatsapp-text"></h3>
+                        <p id="current-chat-status" class="text-sm text-whatsapp-secondary">Online</p>
+                        <p id="typing-indicator" class="text-sm text-whatsapp-green hidden">
+                            <span class="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                            typing...
+                        </p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                    <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messages-container" class="hidden flex-1 overflow-y-auto p-4 space-y-4 bg-whatsapp-chat-bg messages-container scrollbar-hide">
+            <!-- Messages will be loaded here -->
+        </div>
+
+        <!-- Message Input -->
+        <div id="message-input-container" class="hidden p-4 bg-whatsapp-bg border-t border-whatsapp-border">
+            <div class="flex items-center space-x-3">
+                <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div class="flex-1 relative">
+                    <input type="text" id="message-input" placeholder="Type a message..." 
+                           class="w-full px-4 py-2 pr-12 bg-white rounded-full border-0 focus:ring-2 focus:ring-whatsapp-green">
+                    <button class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-whatsapp-secondary hover:text-whatsapp-text">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                </div>
+                <button class="p-2 text-whatsapp-secondary hover:text-whatsapp-text">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button id="send-button" class="p-2 bg-whatsapp-green text-white rounded-full hover:bg-whatsapp-dark-green">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Socket.IO
+    const socket = io();
+    let currentChatUserId = null;
+    let currentUser = {{ current_user.to_dict() | tojson }};
+    let typingTimeout;
+
+    // Load users on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUsers();
+    });
+
+    // Load users from API
+    function loadUsers() {
+        fetch('/api/users')
+            .then(response => response.json())
+            .then(users => {
+                const userList = document.getElementById('user-list');
+                userList.innerHTML = '';
+                
+                users.forEach(user => {
+                    const userElement = createUserElement(user);
+                    userList.appendChild(userElement);
+                });
+            })
+            .catch(error => console.error('Error loading users:', error));
+    }
+
+    // Create user element for sidebar
+    function createUserElement(user) {
+        const div = document.createElement('div');
+        div.className = 'p-4 border-b border-whatsapp-border hover:bg-whatsapp-bg cursor-pointer transition-colors user-item';
+        div.dataset.userId = user.id;
+        div.onclick = () => selectUser(user.id);
+        
+        div.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <img src="${user.avatar}" alt="${user.username}" class="w-12 h-12 rounded-full">
+                    ${user.is_online ? '<div class="online-indicator"></div>' : ''}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-semibold text-whatsapp-text truncate">${user.username}</h3>
+                        <span class="text-xs text-whatsapp-secondary">
+                            ${user.is_online ? 'Online' : formatTime(user.last_seen)}
+                        </span>
+                    </div>
+                    <p class="text-sm text-whatsapp-secondary truncate">${user.status}</p>
+                </div>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    // Select user and load chat
+    function selectUser(userId) {
+        currentChatUserId = userId;
+        
+        // Update UI
+        document.querySelectorAll('.user-item').forEach(item => {
+            item.classList.remove('bg-whatsapp-bg');
+        });
+        document.querySelector(`[data-user-id="${userId}"]`).classList.add('bg-whatsapp-bg');
+        
+        // Show chat interface
+        document.getElementById('welcome-screen').classList.add('hidden');
+        document.getElementById('chat-header').classList.remove('hidden');
+        document.getElementById('messages-container').classList.remove('hidden');
+        document.getElementById('message-input-container').classList.remove('hidden');
+        
+        // Load user data and messages
+        fetch(`/api/users`)
+            .then(response => response.json())
+            .then(users => {
+                const user = users.find(u => u.id === userId);
+                if (user) {
+                    document.getElementById('current-chat-avatar').src = user.avatar;
+                    document.getElementById('current-chat-name').textContent = user.username;
+                    document.getElementById('current-chat-status').textContent = user.is_online ? 'Online' : `Last seen ${formatTime(user.last_seen)}`;
+                    document.getElementById('current-chat-online').classList.toggle('hidden', !user.is_online);
+                }
+            });
+        
+        loadMessages(userId);
+    }
+
+    // Load messages for current chat
+    function loadMessages(userId) {
+        fetch(`/api/messages/${userId}`)
+            .then(response => response.json())
+            .then(messages => {
+                const messagesContainer = document.getElementById('messages-container');
+                messagesContainer.innerHTML = '';
+                
+                messages.forEach(message => {
+                    const messageElement = createMessageElement(message);
+                    messagesContainer.appendChild(messageElement);
+                });
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            })
+            .catch(error => console.error('Error loading messages:', error));
+    }
+
+    // Create message element
+    function createMessageElement(message) {
+        const div = document.createElement('div');
+        const isSent = message.sender_id === currentUser.id;
+        
+        div.className = `flex ${isSent ? 'justify-end' : 'justify-start'} mb-2`;
+        
+        const messageClass = `message-bubble rounded-lg p-3 shadow-sm ${isSent ? 'message-sent' : 'message-received'}`;
+        
+        div.innerHTML = `
+            <div class="${messageClass}">
+                <p class="text-whatsapp-text">${escapeHtml(message.content)}</p>
+                <div class="flex items-center justify-end mt-2 space-x-1">
+                    <span class="text-xs text-whatsapp-secondary">${formatTime(message.timestamp)}</span>
+                    ${isSent ? `<i class="fas fa-check${message.is_read ? '-double text-blue-500' : ' text-gray-400'}"></i>` : ''}
+                </div>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    // Send message
+    function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const content = messageInput.value.trim();
+        
+        if (!content || !currentChatUserId) return;
+        
+        fetch('/api/send_message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recipient_id: currentChatUserId,
+                content: content
+            })
+        })
+        .then(response => response.json())
+        .then(message => {
+            messageInput.value = '';
+            const messageElement = createMessageElement(message);
+            document.getElementById('messages-container').appendChild(messageElement);
+            
+            // Scroll to bottom
+            const container = document.getElementById('messages-container');
+            container.scrollTop = container.scrollHeight;
+        })
+        .catch(error => console.error('Error sending message:', error));
+    }
+
+    // Event listeners
+    document.getElementById('send-button').addEventListener('click', sendMessage);
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Typing indicator
+    document.getElementById('message-input').addEventListener('input', function() {
+        if (currentChatUserId) {
+            socket.emit('typing', {
+                recipient_id: currentChatUserId,
+                is_typing: true
+            });
+            
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('typing', {
+                    recipient_id: currentChatUserId,
+                    is_typing: false
+                });
+            }, 1000);
+        }
+    });
+
+    // Socket.IO events
+    socket.on('new_message', function(data) {
+        if (data.message.sender_id === currentChatUserId) {
+            const messageElement = createMessageElement(data.message);
+            document.getElementById('messages-container').appendChild(messageElement);
+            
+            // Scroll to bottom
+            const container = document.getElementById('messages-container');
+            container.scrollTop = container.scrollHeight;
+        }
+    });
+
+    socket.on('typing_status', function(data) {
+        if (data.user_id === currentChatUserId) {
+            const typingIndicator = document.getElementById('typing-indicator');
+            const statusElement = document.getElementById('current-chat-status');
+            
+            if (data.is_typing) {
+                typingIndicator.classList.remove('hidden');
+                statusElement.classList.add('hidden');
+            } else {
+                typingIndicator.classList.add('hidden');
+                statusElement.classList.remove('hidden');
+            }
+        }
+    });
+
+    // Utility functions
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+        
+        if (diffInHours < 1) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (diffInHours < 24) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+            return date.toLocaleDateString();
+        }
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Search functionality
+    document.getElementById('search-input').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const userItems = document.querySelectorAll('.user-item');
+        
+        userItems.forEach(item => {
+            const username = item.querySelector('h3').textContent.toLowerCase();
+            const status = item.querySelector('p').textContent.toLowerCase();
+            
+            if (username.includes(searchTerm) || status.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
