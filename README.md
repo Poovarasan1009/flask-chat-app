@@ -359,3 +359,4 @@ After getting the basic app running, you can:
 5. **Add mobile app** support with React Native or Flutter
 
 Happy coding! 🚀# test deploy
+# CI/CD Trigger
